@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PuntoCrédito Pro v5 - Gestión Total</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .animate-fade { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .nav-btn-active { background-color: #059669 !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-40">
+            <div class="p-6 border-b border-slate-800">
+                <div class="flex items-center space-x-3 text-emerald-400">
+                    <i class="fas fa-vault text-2xl"></i>
+                    <span class="text-xl font-bold tracking-tight text-white">PuntoCrédito</span>
+                </div>
+            </div>
+
+            <div class="mx-4 mt-6 p-4 bg-slate-800/50 border border-slate-700 rounded-2xl">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Balance Total del Sistema</p>
+                <p id="sidebarTotal" class="text-xl font-bold text-emerald-400 leading-none mt-1">$0.00</p>
+                <p class="text-[9px] text-slate-500 mt-2 font-medium">(Capital + Ganancias)</p>
+            </div>
+            
+            <nav class="flex-grow p-4 space-y-2 mt-4" id="mainNav">
+                <button onclick="showSection('dashboard', this)" class="nav-btn nav-btn-active w-full flex items-center p-3 rounded-xl transition-all"><i class="fas fa-home mr-3"></i> Dashboard</button>
+                <button onclick="showSection('clients', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-users mr-3"></i> Base de Clientes</button>
+                <button onclick="showSection('investors', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-hand-holding-heart mr-3"></i> Aportantes</button>
+                <button onclick="showSection('config', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-cog mr-3"></i> Configuración</button>
+            </nav>
+        </aside>
+
+        <main class="flex-grow ml-64 p-10">
+            <section id="section-dashboard" class="content-section animate-fade">
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-3xl font-extrabold text-slate-800">Panel Financiero</h1><p class="text-slate-500 text-sm">Resumen de capital y rentabilidad.</p></div>
+                    <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">+ Nuevo Préstamo</button>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Capital Disponible</p><p id="statAvailable" class="text-xl font-bold text-slate-800">$0.00</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Capital Prestado</p><p id="statLent" class="text-xl font-bold text-orange-600">$0.00</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative">
+                        <div class="flex justify-between items-center mb-1"><p class="text-slate-400 text-[10px] font-bold uppercase">Intereses Cobrados</p><button onclick="resetEarnings()" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-undo-alt text-[10px]"></i></button></div>
+                        <p id="statTotalEarned" class="text-xl font-bold text-emerald-600">$0.00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Préstamos Activos</p><p id="statActiveCount" class="text-xl font-bold text-indigo-600">0</p></div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr><th class="p-4 text-xs font-bold text-slate-400 uppercase">Cliente / CIP</th><th class="p-4 text-xs font-bold text-slate-400 uppercase">Capital Pendiente</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-center">Interés %</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-right">Interés Ganancia</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-center">Acciones</th></tr>
+                        </thead>
+                        <tbody id="loanTableBody" class="divide-y divide-slate-50 text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="section-clients" class="content-section hidden animate-fade">
+                <header class="mb-10"><h1 class="text-3xl font-extrabold text-slate-800">Base de Clientes</h1></header>
+                <div id="clientsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <section id="section-investors" class="content-section hidden animate-fade">
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-3xl font-extrabold text-slate-800">Aportantes</h1><p class="text-slate-500 text-sm">Distribución proporcional.</p></div>
+                    <button onclick="openInvestorModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">+ Registrar Aportante</button>
+                </header>
+                <div id="investorsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <section id="section-config" class="content-section hidden animate-fade">
+                <h1 class="text-2xl font-bold mb-6 text-slate-800">Configuración</h1>
+                <div class="bg-white p-8 rounded-3xl shadow-sm max-w-lg border border-slate-100">
+                    <button onclick="resetApp()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all">Reiniciar Sistema</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="investorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Nuevo Aportante</h2>
+            <div class="space-y-4">
+                <input type="text" id="i_name" placeholder="Nombre" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <input type="number" id="i_amount" placeholder="Monto inicial $" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <button onclick="saveInvestor()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Registrar</button>
+                <button onclick="closeInvestorModal()" class="w-full text-slate-400 font-bold text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editInvestorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Modificar Aportante</h2>
+            <div class="space-y-4">
+                <input type="hidden" id="ei_id">
+                <label class="text-xs font-bold text-slate-400 uppercase">Nombre</label>
+                <input type="text" id="ei_name" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <label class="text-xs font-bold text-slate-400 uppercase">Capital Base ($)</label>
+                <input type="number" id="ei_amount" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <button onclick="updateInvestor()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Guardar Cambios</button>
+                <button onclick="closeEditInvestorModal()" class="w-full text-slate-400 font-bold text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[420px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Nuevo Préstamo</h2>
+            <div class="space-y-4">
+                <select id="m_select_client" onchange="fillClientData()" class="w-full bg-slate-50 p-3 rounded-xl border text-sm font-medium"><option value="">-- Nuevo Cliente --</option></select>
+                <input type="text" id="m_name" placeholder="Nombre" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <input type="text" id="m_cip" placeholder="CIP" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <input type="text" id="m_phone" placeholder="WhatsApp" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" id="m_amount" placeholder="Monto $" class="w-full bg-slate-50 p-3 rounded-xl border">
+                    <input type="number" id="m_interest" placeholder="Interés %" class="w-full bg-slate-50 p-3 rounded-xl border" value="10">
+                </div>
+                <button onclick="saveLoan()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold">Confirmar</button>
+                <button onclick="closeModal()" class="w-full text-slate-400 font-bold text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editClientModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Modificar Cliente</h2>
+            <div class="space-y-4">
+                <input type="hidden" id="e_old_cip">
+                <input type="text" id="e_name" placeholder="Nombre" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <input type="text" id="e_cip" placeholder="CIP" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <input type="text" id="e_phone" placeholder="WhatsApp" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <button onclick="updateClient()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Guardar Cambios</button>
+                <button onclick="closeEditClientModal()" class="w-full text-slate-400 font-bold text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[600px] max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+            <h2 class="text-2xl font-bold mb-2 text-slate-800">Historial de Pagos</h2>
+            <p id="historyClientName" class="text-indigo-600 font-bold mb-6"></p>
+            <div class="overflow-y-auto flex-grow border rounded-xl">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b sticky top-0">
+                        <tr>
+                            <th class="p-3 font-bold text-slate-400 uppercase text-[10px]">Fecha</th>
+                            <th class="p-3 font-bold text-slate-400 uppercase text-[10px]">Abono Total</th>
+                            <th class="p-3 font-bold text-slate-400 uppercase text-[10px]">A Capital</th>
+                            <th class="p-3 font-bold text-slate-400 uppercase text-[10px]">Interés</th>
+                            <th class="p-3 font-bold text-slate-400 uppercase text-[10px]">Saldo Rest.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y"></tbody>
+                </table>
+            </div>
+            <button onclick="closeHistoryModal()" class="mt-6 w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Cerrar Historial</button>
+        </div>
+    </div>
+
+    <div id="invoice-container" style="position: absolute; left: -9999px; top: -9999px;">
+        <div id="invoice-template" style="width: 700px; padding: 40px; background: white; font-family: Arial;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 3px solid #059669; padding-bottom: 20px; margin-bottom: 20px;">
+                <div><h1 style="color: #059669; margin: 0; font-size: 32px;">PuntoCrédito</h1><p>Recibo de Abono</p></div>
+                <div style="text-align: right;"><p>No: <span id="inv_num"></span></p><p>Fecha: <span id="inv_date"></span></p></div>
+            </div>
+            <p><strong>Cliente:</strong> <span id="inv_client_name"></span> (<span id="inv_client_cip"></span>)</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background: #f1f5f9;"><th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Concepto</th><th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Monto</th></tr>
+                <tr><td style="padding: 10px; border: 1px solid #ddd;">Abono a Capital</td><td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$ <span id="inv_p_pri"></span></td></tr>
+                <tr><td style="padding: 10px; border: 1px solid #ddd;">Intereses</td><td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$ <span id="inv_p_int"></span></td></tr>
+                <tr style="font-weight: bold; background: #f0fdf4;"><td style="padding: 10px; border: 1px solid #ddd;">TOTAL</td><td style="padding: 10px; border: 1px solid #ddd; text-align: right;">$ <span id="inv_total"></span></td></tr>
+            </table>
+            <p style="padding: 10px; background: #fffbeb; border: 1px solid #fef3c7;">Saldo Pendiente: <strong>$ <span id="inv_remaining"></span></strong></p>
+        </div>
+    </div>
+
+    <script>
+        let rawData = localStorage.getItem('puntocredito_v5');
+        // Se asegura de que exista el arreglo 'paymentHistory'
+        let state = rawData ? JSON.parse(rawData) : { earnings: 0, loans: [], clientsDatabase: [], investors: [], paymentHistory: [] };
+        if(!state.paymentHistory) state.paymentHistory = [];
+
+        function saveState() {
+            localStorage.setItem('puntocredito_v5', JSON.stringify(state));
+            renderDashboard(); renderClients(); renderInvestors();
+        }
+
+        function showSection(id, btn) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${id}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('nav-btn-active');
+                b.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+            if(btn) btn.classList.add('nav-btn-active');
+        }
+
+        // --- LÓGICA APORTANTES ---
+        function openInvestorModal() { document.getElementById('investorModal').classList.remove('hidden'); }
+        function closeInvestorModal() { document.getElementById('investorModal').classList.add('hidden'); }
+        function saveInvestor() {
+            const name = document.getElementById('i_name').value;
+            const amount = parseFloat(document.getElementById('i_amount').value);
+            if(!name || isNaN(amount)) return;
+            state.investors.push({ id: Date.now(), name, amount });
+            saveState(); closeInvestorModal();
+        }
+        function addCapitalToInvestor(id) {
+            const addValue = parseFloat(prompt("Monto a inyectar:"));
+            if (isNaN(addValue) || addValue <= 0) return;
+            const inv = state.investors.find(i => i.id === id);
+            if (inv) { inv.amount += addValue; saveState(); }
+        }
+        function openEditInvestorModal(id) {
+            const inv = state.investors.find(i => i.id === id);
+            if (!inv) return;
+            document.getElementById('ei_id').value = inv.id;
+            document.getElementById('ei_name').value = inv.name;
+            document.getElementById('ei_amount').value = inv.amount;
+            document.getElementById('editInvestorModal').classList.remove('hidden');
+        }
+        function closeEditInvestorModal() { document.getElementById('editInvestorModal').classList.add('hidden'); }
+        function updateInvestor() {
+            const id = parseInt(document.getElementById('ei_id').value);
+            const inv = state.investors.find(i => i.id === id);
+            if (inv) {
+                inv.name = document.getElementById('ei_name').value;
+                inv.amount = parseFloat(document.getElementById('ei_amount').value);
+                saveState(); closeEditInvestorModal();
+            }
+        }
+        function deleteInvestor(id) {
+            if (confirm("¿Eliminar aportante? Se restará su capital y su parte de las ganancias del pozo total.")) {
+                const numAportantes = state.investors.length;
+                const shareOfEarnings = state.earnings / numAportantes;
+                state.earnings -= shareOfEarnings; 
+                state.investors = state.investors.filter(i => i.id !== id);
+                saveState();
+            }
+        }
+        function renderInvestors() {
+            const grid = document.getElementById('investorsGrid'); grid.innerHTML = '';
+            const numAportantes = state.investors.length;
+            const gananciaPorPersona = numAportantes > 0 ? (state.earnings / numAportantes) : 0;
+            state.investors.forEach(inv => {
+                grid.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm relative">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><h3 class="font-bold text-slate-800">${inv.name}</h3><p class="text-[10px] text-slate-400 font-bold uppercase">Socio</p></div>
+                            <button onclick="addCapitalToInvestor(${inv.id})" class="bg-emerald-100 text-emerald-600 w-8 h-8 rounded-full hover:bg-emerald-600 hover:text-white transition-all"><i class="fas fa-plus text-xs"></i></button>
+                        </div>
+                        <div class="space-y-2 text-sm mb-4">
+                            <div class="flex justify-between"><span>Capital:</span><span class="font-bold text-slate-700">$${inv.amount.toFixed(2)}</span></div>
+                            <div class="flex justify-between"><span>Parte Ganancia:</span><span class="font-bold text-emerald-600">+$${gananciaPorPersona.toFixed(2)}</span></div>
+                            <div class="border-t pt-2 flex justify-between font-bold"><span>Balance:</span><span>$${(inv.amount + gananciaPorPersona).toFixed(2)}</span></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="openEditInvestorModal(${inv.id})" class="bg-slate-100 text-slate-500 py-2 rounded-xl text-[10px] font-bold hover:bg-indigo-600 hover:text-white transition-all">EDITAR</button>
+                            <button onclick="deleteInvestor(${inv.id})" class="bg-red-50 text-red-500 py-2 rounded-xl text-[10px] font-bold hover:bg-red-600 hover:text-white transition-all">ELIMINAR</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- LÓGICA PRÉSTAMOS ---
+        function openModal() {
+            const select = document.getElementById('m_select_client');
+            select.innerHTML = '<option value="">-- Nuevo Cliente --</option>';
+            state.clientsDatabase.forEach(c => select.innerHTML += `<option value="${c.cip}">${c.name}</option>`);
+            document.getElementById('loanModal').classList.remove('hidden');
+        }
+        function closeModal() { document.getElementById('loanModal').classList.add('hidden'); }
+        function fillClientData() {
+            const cip = document.getElementById('m_select_client').value;
+            const client = state.clientsDatabase.find(c => c.cip === cip);
+            if(client) {
+                document.getElementById('m_name').value = client.name;
+                document.getElementById('m_cip').value = client.cip;
+                document.getElementById('m_phone').value = client.phone || "";
+            }
+        }
+        function saveLoan() {
+            const amount = parseFloat(document.getElementById('m_amount').value);
+            const name = document.getElementById('m_name').value;
+            const cip = document.getElementById('m_cip').value;
+            const interest = parseFloat(document.getElementById('m_interest').value);
+            const totalAportado = state.investors.reduce((acc, inv) => acc + inv.amount, 0);
+            const lentTotal = state.loans.reduce((acc, l) => acc + l.currentPrincipal, 0);
+            if(amount > (totalAportado - lentTotal)) return alert("Fondos insuficientes.");
+            let client = state.clientsDatabase.find(c => c.cip === cip);
+            if(!client) {
+                client = { name, cip, phone: document.getElementById('m_phone').value, loanCount: 1 };
+                state.clientsDatabase.push(client);
+            } else { client.loanCount = (client.loanCount || 0) + 1; }
+            state.loans.push({ id: Date.now(), name, cip, currentPrincipal: amount, interestRate: interest, totalDebt: amount + (amount * (interest/100)) });
+            saveState(); closeModal();
+        }
+
+        // --- LÓGICA CLIENTES Y HISTORIAL ---
+        function renderClients() {
+            const grid = document.getElementById('clientsGrid'); grid.innerHTML = '';
+            state.clientsDatabase.forEach(c => {
+                grid.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div><h3 class="font-bold text-slate-800">${c.name}</h3><p class="text-xs text-slate-400">CIP: ${c.cip}</p></div>
+                            <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded-lg">Veces: ${c.loanCount || 0}</span>
+                        </div>
+                        <div class="space-y-2">
+                            <button onclick="openEditClientModal('${c.cip}')" class="w-full bg-slate-100 text-slate-600 py-2 rounded-xl text-[10px] font-bold hover:bg-indigo-600 hover:text-white transition-all">MODIFICAR</button>
+                            <button onclick="viewHistory('${c.cip}')" class="w-full bg-blue-50 text-blue-600 py-2 rounded-xl text-[10px] font-bold hover:bg-blue-600 hover:text-white transition-all">VER HISTORIAL</button>
+                            <button onclick="deleteClient('${c.cip}')" class="w-full bg-red-50 text-red-600 py-2 rounded-xl text-[10px] font-bold hover:bg-red-600 hover:text-white transition-all">ELIMINAR CLIENTE</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function viewHistory(cip) {
+            const client = state.clientsDatabase.find(c => c.cip === cip);
+            const history = state.paymentHistory.filter(h => h.cip === cip);
+            document.getElementById('historyClientName').innerText = client ? client.name : "Cliente";
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = history.length ? '' : '<tr><td colspan="5" class="p-10 text-center text-slate-400">No hay pagos registrados.</td></tr>';
+            
+            history.reverse().forEach(h => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 text-[11px]">${h.date}</td>
+                        <td class="p-3 font-bold">$${h.total.toFixed(2)}</td>
+                        <td class="p-3 text-slate-500">$${h.pPri.toFixed(2)}</td>
+                        <td class="p-3 text-emerald-600">$${h.pInt.toFixed(2)}</td>
+                        <td class="p-3 font-bold text-orange-600">$${h.remaining.toFixed(2)}</td>
+                    </tr>`;
+            });
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() { document.getElementById('historyModal').classList.add('hidden'); }
+
+        function deleteClient(cip) {
+            const hasLoans = state.loans.some(l => l.cip === cip);
+            if(hasLoans) return alert("No se puede eliminar un cliente con préstamos activos.");
+            if(confirm("¿Eliminar cliente?")) {
+                state.clientsDatabase = state.clientsDatabase.filter(c => c.cip !== cip);
+                saveState();
+            }
+        }
+
+        function openEditClientModal(cip) {
+            const c = state.clientsDatabase.find(x => x.cip === cip);
+            if(!c) return;
+            document.getElementById('e_old_cip').value = c.cip;
+            document.getElementById('e_name').value = c.name;
+            document.getElementById('e_cip').value = c.cip;
+            document.getElementById('e_phone').value = c.phone || "";
+            document.getElementById('editClientModal').classList.remove('hidden');
+        }
+        function closeEditClientModal() { document.getElementById('editClientModal').classList.add('hidden'); }
+        function updateClient() {
+            const oldCip = document.getElementById('e_old_cip').value;
+            const client = state.clientsDatabase.find(c => c.cip === oldCip);
+            if(client) {
+                client.name = document.getElementById('e_name').value;
+                client.cip = document.getElementById('e_cip').value;
+                client.phone = document.getElementById('e_phone').value;
+                state.loans.forEach(l => { if(l.cip === oldCip) { l.cip = client.cip; l.name = client.name; } });
+                saveState(); closeEditClientModal();
+            }
+        }
+
+        // --- LÓGICA COBROS Y PDF ---
+        async function makeAbono(id) {
+            const loan = state.loans.find(l => l.id === id);
+            const abono = parseFloat(prompt(`Deuda: $${loan.totalDebt.toFixed(2)}. Ingrese pago:`));
+            if(isNaN(abono) || abono <= 0 || abono > (loan.totalDebt + 0.01)) return;
+            const pInt = Math.min(abono, loan.totalDebt - loan.currentPrincipal);
+            const pPri = Math.max(0, abono - pInt);
+            const remaining = Math.max(0, loan.totalDebt - abono);
+
+            // AGREGAR AL HISTORIAL
+            state.paymentHistory.push({
+                date: new Date().toLocaleString(),
+                cip: loan.cip,
+                total: abono,
+                pInt: pInt,
+                pPri: pPri,
+                remaining: remaining
+            });
+
+            await generateInvoice(loan, abono, pInt, pPri);
+            state.earnings += pInt;
+            loan.currentPrincipal -= pPri;
+            if (loan.currentPrincipal < 0.1) state.loans = state.loans.filter(l => l.id !== id);
+            else loan.totalDebt = loan.currentPrincipal + (loan.currentPrincipal * (loan.interestRate/100));
+            saveState();
+        }
+
+        async function generateInvoice(loan, total, pInt, pPri) {
+            document.getElementById('inv_num').innerText = Math.floor(Math.random()*90000)+10000;
+            document.getElementById('inv_date').innerText = new Date().toLocaleString();
+            document.getElementById('inv_client_name').innerText = loan.name;
+            document.getElementById('inv_client_cip').innerText = loan.cip;
+            document.getElementById('inv_p_pri').innerText = pPri.toFixed(2);
+            document.getElementById('inv_p_int').innerText = pInt.toFixed(2);
+            document.getElementById('inv_total').innerText = total.toFixed(2);
+            document.getElementById('inv_remaining').innerText = Math.max(0, loan.totalDebt - total).toFixed(2);
+            const opt = { margin: 0.5, filename: `Recibo_${loan.name}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter' } };
+            await html2pdf().set(opt).from(document.getElementById('invoice-template')).save();
+        }
+
+        function renderDashboard() {
+            const tbody = document.getElementById('loanTableBody'); tbody.innerHTML = '';
+            let lentTotal = 0;
+            state.loans.forEach(l => {
+                lentTotal += l.currentPrincipal;
+                tbody.innerHTML += `<tr><td class="p-4"><b>${l.name}</b><br><span class="text-[10px] text-slate-400">${l.cip}</span></td><td class="p-4">$${l.currentPrincipal.toFixed(2)}</td><td class="p-4 text-center">${l.interestRate}%</td><td class="p-4 text-right text-emerald-600 font-bold">$${(l.totalDebt - l.currentPrincipal).toFixed(2)}</td><td class="p-4 text-center"><button onclick="makeAbono(${l.id})" class="bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white"><i class="fas fa-file-invoice-dollar"></i> Cobrar</button></td></tr>`;
+            });
+            const totalAportado = state.investors.reduce((acc, inv) => acc + inv.amount, 0);
+            document.getElementById('statAvailable').innerText = `$${(totalAportado - lentTotal).toFixed(2)}`;
+            document.getElementById('statLent').innerText = `$${lentTotal.toFixed(2)}`;
+            document.getElementById('statTotalEarned').innerText = `$${state.earnings.toFixed(2)}`;
+            document.getElementById('statActiveCount').innerText = state.loans.length;
+            document.getElementById('sidebarTotal').innerText = `$${(totalAportado + state.earnings).toFixed(2)}`;
+        }
+        function resetApp() { if(confirm("¿Borrar todo?")) { localStorage.clear(); location.reload(); } }
+        function resetEarnings() { if(confirm("¿Resetear ganancias?")) { state.earnings = 0; saveState(); } }
+
+        renderDashboard(); renderClients(); renderInvestors();
+    </script>
+</body>
+</html>
