@@ -20,9 +20,35 @@
         .logo-title { font-size: 20px; font-weight: bold; color: #ffffff; }
         .logo-title span { color: #10b981; }
         .logo-slogan { font-size: 10px; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* LOGIN OVERLAY */
+        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
+
+    <div id="login-overlay">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+            <div class="flex justify-center mb-4">
+                <svg width="60" height="60" viewBox="0 0 100 100">
+                    <path d="M50 5 C30 5 15 20 15 40 C15 65 50 95 50 95 C50 95 85 65 85 40 C85 20 70 5 50 5Z" fill="#16a34a"/>
+                    <text x="50" y="55" text-anchor="middle" font-size="30" font-weight="bold" fill="white">$</text>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-6">Iniciar Sesión</h2>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Usuario</label>
+                    <input type="text" id="user_login" class="w-full bg-slate-50 p-3 rounded-xl border outline-none" placeholder="admin">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Contraseña</label>
+                    <input type="password" id="pass_login" class="w-full bg-slate-50 p-3 rounded-xl border outline-none" placeholder="****">
+                </div>
+                <button onclick="checkLogin()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg">Entrar</button>
+            </div>
+        </div>
+    </div>
 
     <div class="flex min-h-screen">
         <aside class="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-40">
@@ -48,18 +74,25 @@
             </div>
             
             <nav class="flex-grow p-4 space-y-2 mt-4" id="mainNav">
-                <button onclick="showSection('dashboard', this)" class="nav-btn nav-btn-active w-full flex items-center p-3 rounded-xl transition-all"><i class="fas fa-home mr-3"></i> Dashboard</button>
-                <button onclick="showSection('clients', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-users mr-3"></i> Base de Clientes</button>
-                <button onclick="showSection('investors', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-hand-holding-heart mr-3"></i> Aportantes</button>
-                <button onclick="showSection('config', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-cog mr-3"></i> Configuración</button>
+                <button data-section="dashboard" onclick="showSection('dashboard', this)" class="nav-btn nav-btn-active w-full flex items-center p-3 rounded-xl transition-all"><i class="fas fa-home mr-3"></i> Dashboard</button>
+                <button data-section="clients" onclick="showSection('clients', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-users mr-3"></i> Base de Clientes</button>
+                <button data-section="investors" onclick="showSection('investors', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-hand-holding-heart mr-3"></i> Aportantes</button>
+                <button data-section="config" onclick="showSection('config', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-cog mr-3"></i> Configuración</button>
             </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full text-slate-500 text-xs hover:text-white transition-colors">Cerrar Sesión</button>
+            </div>
         </aside>
 
         <main class="flex-grow ml-64 p-10">
             <section id="section-dashboard" class="content-section animate-fade">
                 <header class="flex justify-between items-center mb-10">
                     <div><h1 class="text-3xl font-extrabold text-slate-800">Panel Financiero</h1><p class="text-slate-500 text-sm">Resumen de capital y rentabilidad.</p></div>
-                    <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">+ Nuevo Préstamo</button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">+ Nuevo Préstamo</button>
+                            <button id="profileBtn" onclick="openProfile()" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">Mi Cuenta</button>
+                        </div>
                 </header>
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
@@ -97,11 +130,50 @@
 
             <section id="section-config" class="content-section hidden animate-fade">
                 <h1 class="text-2xl font-bold mb-6 text-slate-800">Configuración</h1>
+                
+                <div class="bg-white p-8 rounded-3xl shadow-sm mb-6 border border-slate-100 max-w-lg">
+                    <h2 class="text-sm font-bold text-indigo-600 uppercase mb-4">Gestión de Usuarios</h2>
+                    <div class="space-y-3">
+                        <div id="user_list_admin" class="divide-y divide-slate-100"></div>
+                        <div class="pt-4 space-y-2">
+                            <input type="text" id="nu_name" placeholder="Nuevo Usuario" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                            <input type="password" id="nu_pass" placeholder="Nueva Contraseña" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                            <div class="mt-2">
+                                <label class="text-[11px] font-medium text-slate-600">Rol</label>
+                                <select id="nu_role" class="w-full bg-slate-50 p-2 rounded-xl border text-sm mt-1">
+                                    <option value="user">Usuario</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm mt-2">
+                                <label class="flex items-center"><input id="nu_perm_dashboard" type="checkbox" class="mr-2">Dashboard</label>
+                                <label class="flex items-center"><input id="nu_perm_clients" type="checkbox" class="mr-2">Clientes</label>
+                                <label class="flex items-center"><input id="nu_perm_investors" type="checkbox" class="mr-2">Aportantes</label>
+                                <label class="flex items-center"><input id="nu_perm_config" type="checkbox" class="mr-2">Configuración</label>
+                            </div>
+                            <button onclick="createUser()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm">Crear Usuario</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white p-8 rounded-3xl shadow-sm max-w-lg border border-slate-100">
                     <button onclick="resetApp()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all">Reiniciar Sistema</button>
                 </div>
             </section>
         </main>
+    </div>
+
+    <div id="profileModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-2xl w-[360px] shadow-2xl">
+            <h2 class="text-xl font-bold mb-4">Mi Cuenta</h2>
+            <div class="text-sm space-y-2">
+                <div><b>Usuario:</b> <span id="profile_user" class="font-medium"></span></div>
+                <div><b>Rol:</b> <span id="profile_role" class="font-medium"></span></div>
+                <div><b>Contraseña:</b> <span id="profile_pass" class="font-medium"></span></div>
+                <div><b>Permisos:</b> <span id="profile_allowed" class="font-medium"></span></div>
+            </div>
+            <div class="mt-6"><button onclick="closeProfile()" class="w-full py-2 bg-slate-100 rounded-xl font-bold">Cerrar</button></div>
+        </div>
     </div>
 
     <div id="investorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
@@ -181,7 +253,10 @@
                     <tbody id="historyTableBody" class="divide-y"></tbody>
                 </table>
             </div>
-            <button onclick="closeHistoryModal()" class="mt-6 w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Cerrar Historial</button>
+            <div class="mt-6 grid grid-cols-2 gap-3">
+                <button onclick="downloadHistory()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Descargar Historial</button>
+                <button onclick="closeHistoryModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">Cerrar Historial</button>
+            </div>
         </div>
     </div>
 
@@ -253,16 +328,155 @@
     </div>
 
     <script>
+        // --- ESTADO CON GESTIÓN DE USUARIOS ---
         let rawData = localStorage.getItem('puntocredito_v5');
-        let state = rawData ? JSON.parse(rawData) : { earnings: 0, loans: [], clientsDatabase: [], investors: [], paymentHistory: [] };
-        if(!state.paymentHistory) state.paymentHistory = [];
+        let state = rawData ? JSON.parse(rawData) : { 
+            earnings: 0, 
+            loans: [], 
+            clientsDatabase: [], 
+            investors: [], 
+            paymentHistory: [],
+            users: [{ user: 'admin', pass: '1234', role: 'admin', perms: { dashboard: true, clients: true, investors: true, config: true } }] // Usuario inicial
+        };
+        
+        // Corregir estados antiguos sin tabla de usuarios
+        if(!state.users) state.users = [{ user: 'admin', pass: '1234', role: 'admin', perms: { dashboard: true, clients: true, investors: true, config: true } }];
 
         function saveState() {
             localStorage.setItem('puntocredito_v5', JSON.stringify(state));
-            renderDashboard(); renderClients(); renderInvestors();
+            renderDashboard(); renderClients(); renderInvestors(); renderUserList();
         }
 
+        // --- LÓGICA DE LOGIN ---
+        function checkLogin() {
+            const u = document.getElementById('user_login').value;
+            const p = document.getElementById('pass_login').value;
+            const user = state.users.find(x => x.user === u && x.pass === p);
+            if(user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                sessionStorage.setItem('pc_logged', 'true');
+                sessionStorage.setItem('pc_user', u);
+                applyUserPermissions();
+            } else { alert("Datos incorrectos"); }
+        }
+
+        function logout() { sessionStorage.removeItem('pc_logged'); sessionStorage.removeItem('pc_user'); location.reload(); }
+
+        // Autologin si ya entró
+        if(sessionStorage.getItem('pc_logged')) {
+            document.getElementById('login-overlay').style.display = 'none';
+            applyUserPermissions();
+        }
+
+        function createUser() {
+            const u = document.getElementById('nu_name').value;
+            const p = document.getElementById('nu_pass').value;
+            if(!u || !p) return;
+            const role = document.getElementById('nu_role') ? document.getElementById('nu_role').value : 'user';
+            let perms = {
+                dashboard: !!document.getElementById('nu_perm_dashboard').checked,
+                clients: !!document.getElementById('nu_perm_clients').checked,
+                investors: !!document.getElementById('nu_perm_investors').checked,
+                config: !!document.getElementById('nu_perm_config').checked
+            };
+            if(role === 'admin') {
+                perms = { dashboard: true, clients: true, investors: true, config: true };
+            }
+            state.users.push({ user: u, pass: p, role, perms });
+            saveState();
+            document.getElementById('nu_name').value = '';
+            document.getElementById('nu_pass').value = '';
+            document.getElementById('nu_perm_dashboard').checked = false;
+            document.getElementById('nu_perm_clients').checked = false;
+            document.getElementById('nu_perm_investors').checked = false;
+            document.getElementById('nu_perm_config').checked = false;
+            if(document.getElementById('nu_role')) document.getElementById('nu_role').value = 'user';
+        }
+
+        function renderUserList() {
+            const list = document.getElementById('user_list_admin');
+            list.innerHTML = '';
+            state.users.forEach(u => {
+                const allowed = [];
+                if(u.perms && u.perms.dashboard) allowed.push('Dashboard');
+                if(u.perms && u.perms.clients) allowed.push('Clientes');
+                if(u.perms && u.perms.investors) allowed.push('Aportantes');
+                if(u.perms && u.perms.config) allowed.push('Config');
+                const roleLabel = u.role ? `<div class="text-[11px] text-slate-600">Rol: <span class="font-medium text-slate-700">${u.role}</span></div>` : '';
+                list.innerHTML += `
+                    <div class="py-2 text-xs border-b border-slate-100 pb-2 mb-2">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">${u.user}</div>
+                                ${roleLabel}
+                                <div class="text-[11px] text-slate-500">Contraseña: <span class="font-medium text-slate-700">${u.pass}</span></div>
+                                <div class="text-[11px] text-slate-400">Puede ver: <span class="font-medium text-slate-700">${allowed.join(', ') || 'Ninguno'}</span></div>
+                            </div>
+                            <div class="pl-4">
+                                <button onclick="deleteUser('${u.user}')" class="text-red-500 font-bold">X</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function deleteUser(name) {
+            const userToDelete = state.users.find(u => u.user === name);
+            if(!userToDelete) return;
+            if(userToDelete.role === 'admin') {
+                const adminCount = state.users.filter(u => u.role === 'admin').length;
+                if(adminCount <= 1) return alert('No puedes borrar al último administrador');
+            }
+            state.users = state.users.filter(u => u.user !== name);
+            saveState();
+        }
+
+        // Aplicar permisos del usuario logueado a la UI (ocultar botones que no correspondan)
+        function applyUserPermissions() {
+            const currentUser = sessionStorage.getItem('pc_user');
+            // por defecto mostrar todo
+            document.querySelectorAll('#mainNav .nav-btn').forEach(b => b.style.display = 'flex');
+            if(!currentUser) return;
+            const user = state.users.find(x => x.user === currentUser);
+            if(!user) return;
+            const perms = user.perms || {};
+            document.querySelectorAll('#mainNav .nav-btn').forEach(btn => {
+                const section = btn.getAttribute('data-section');
+                if(section && !perms[section] && user.role !== 'admin') btn.style.display = 'none';
+                else btn.style.display = 'flex';
+            });
+            const lbl = document.getElementById('currentUserLabel');
+            if(lbl) lbl.innerText = currentUser;
+        }
+
+        function openProfile() {
+            const currentUser = sessionStorage.getItem('pc_user');
+            if(!currentUser) return alert('No hay usuario activo');
+            const user = state.users.find(x => x.user === currentUser);
+            if(!user) return alert('Usuario no encontrado');
+            document.getElementById('profile_user').innerText = user.user;
+            document.getElementById('profile_pass').innerText = user.pass;
+            document.getElementById('profile_role').innerText = user.role || 'user';
+            const allowed = [];
+            if(user.perms && user.perms.dashboard) allowed.push('Dashboard');
+            if(user.perms && user.perms.clients) allowed.push('Clientes');
+            if(user.perms && user.perms.investors) allowed.push('Aportantes');
+            if(user.perms && user.perms.config) allowed.push('Configuración');
+            document.getElementById('profile_allowed').innerText = allowed.join(', ') || 'Ninguno';
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+        function closeProfile() { document.getElementById('profileModal').classList.add('hidden'); }
+
+        // --- LAS FUNCIONES ORIGINALES SIGUEN ABAJO SIN CAMBIOS ---
         function showSection(id, btn) {
+            // Verificar permisos antes de mostrar
+            const currentUser = sessionStorage.getItem('pc_user');
+            if(currentUser) {
+                const user = state.users.find(x => x.user === currentUser);
+                if(user && user.role !== 'admin') {
+                    if(user && user.perms && !user.perms[id]) return alert('No tiene permiso para ver esta sección');
+                }
+            }
             document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
             document.getElementById(`section-${id}`).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => {
@@ -307,7 +521,7 @@
             }
         }
         function deleteInvestor(id) {
-            if (confirm("¿Eliminar aportante? Se restará su capital y su parte de las ganancias del pozo total.")) {
+            if (confirm("¿Eliminar aportante?")) {
                 const numAportantes = state.investors.length;
                 const shareOfEarnings = state.earnings / numAportantes;
                 state.earnings -= shareOfEarnings; 
@@ -373,7 +587,59 @@
             saveState(); closeModal();
         }
 
-        // --- LÓGICA CLIENTES Y HISTORIAL ---
+        // --- LÓGICA DASHBOARD, COBROS Y FACTURA (INTEGRA FACTURA COMPLETA) ---
+        function renderDashboard() {
+            const tbody = document.getElementById('loanTableBody'); tbody.innerHTML = '';
+            let lentTotal = 0;
+            state.loans.forEach(l => {
+                lentTotal += l.currentPrincipal;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4"><b>${l.name}</b><br><span class="text-[10px] text-slate-400 font-bold uppercase">${l.cip}</span></td>
+                        <td class="p-4 font-bold">$${l.currentPrincipal.toFixed(2)}</td>
+                        <td class="p-4 text-center text-slate-400">${l.interestRate}%</td>
+                        <td class="p-4 text-right text-emerald-600 font-bold">$${(l.totalDebt - l.currentPrincipal).toFixed(2)}</td>
+                        <td class="p-4 text-center"><button onclick="makeAbono(${l.id})" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-bold text-xs hover:bg-emerald-600 hover:text-white transition-all">COBRAR</button></td>
+                    </tr>`;
+            });
+            const totalAportado = state.investors.reduce((acc, inv) => acc + inv.amount, 0);
+            document.getElementById('statAvailable').innerText = `$${(totalAportado - lentTotal).toFixed(2)}`;
+            document.getElementById('statLent').innerText = `$${lentTotal.toFixed(2)}`;
+            document.getElementById('statTotalEarned').innerText = `$${state.earnings.toFixed(2)}`;
+            document.getElementById('statActiveCount').innerText = state.loans.length;
+            document.getElementById('sidebarTotal').innerText = `$${(totalAportado + state.earnings).toFixed(2)}`;
+        }
+
+        async function makeAbono(id) {
+            const loan = state.loans.find(l => l.id === id);
+            const abono = parseFloat(prompt(`Deuda total: $${loan.totalDebt.toFixed(2)}. Ingrese pago:`));
+            if(isNaN(abono) || abono <= 0 || abono > (loan.totalDebt + 0.01)) return;
+            const pInt = Math.min(abono, loan.totalDebt - loan.currentPrincipal);
+            const pPri = abono - pInt;
+            state.earnings += pInt;
+            loan.currentPrincipal -= pPri;
+            const remaining = Math.max(0, loan.currentPrincipal);
+            state.paymentHistory.push({ cip: loan.cip, date: new Date().toLocaleString(), total: abono, pPri, pInt, remaining });
+            const invNum = `REC-${Math.floor(Math.random()*900000)+100000}`;
+            document.getElementById('inv_num').innerText = invNum;
+            document.getElementById('inv_date').innerText = new Date().toLocaleString();
+            document.getElementById('inv_client_name').innerText = loan.name;
+            document.getElementById('inv_client_cip').innerText = loan.cip;
+            document.getElementById('inv_p_pri').innerText = pPri.toFixed(2);
+            document.getElementById('inv_p_int').innerText = pInt.toFixed(2);
+            document.getElementById('inv_total').innerText = abono.toFixed(2);
+            document.getElementById('inv_remaining').innerText = remaining.toFixed(2);
+            const opt = { margin: 0, filename: `Comprobante_${loan.name}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+            const element = document.getElementById('invoice-template');
+            // Preguntar si desea descargar el comprobante
+            if(confirm('¿Desea descargar el comprobante de pago?')) {
+                await html2pdf().set(opt).from(element).save();
+            }
+            if(loan.currentPrincipal < 0.1) state.loans = state.loans.filter(l => l.id !== id);
+            else loan.totalDebt = loan.currentPrincipal + (loan.currentPrincipal * (loan.interestRate/100));
+            saveState();
+        }
+
         function renderClients() {
             const grid = document.getElementById('clientsGrid'); grid.innerHTML = '';
             state.clientsDatabase.forEach(c => {
@@ -398,120 +664,54 @@
             document.getElementById('historyClientName').innerText = client ? client.name : "Cliente";
             const tbody = document.getElementById('historyTableBody');
             tbody.innerHTML = history.length ? '' : '<tr><td colspan="5" class="p-10 text-center text-slate-400">No hay pagos registrados.</td></tr>';
-            
             history.reverse().forEach(h => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="p-3 text-[11px]">${h.date}</td>
-                        <td class="p-3 font-bold">$${h.total.toFixed(2)}</td>
-                        <td class="p-3 text-slate-500">$${h.pPri.toFixed(2)}</td>
-                        <td class="p-3 text-emerald-600">$${h.pInt.toFixed(2)}</td>
-                        <td class="p-3 font-bold text-orange-600">$${h.remaining.toFixed(2)}</td>
-                    </tr>`;
+                tbody.innerHTML += `<tr><td class="p-3 text-[11px]">${h.date}</td><td class="p-3 font-bold">$${h.total.toFixed(2)}</td><td class="p-3 text-slate-500">$${h.pPri.toFixed(2)}</td><td class="p-3 text-emerald-600">$${h.pInt.toFixed(2)}</td><td class="p-3 font-bold text-orange-600">$${h.remaining.toFixed(2)}</td></tr>`;
             });
             document.getElementById('historyModal').classList.remove('hidden');
         }
 
+        function downloadHistory() {
+            const clientName = document.getElementById('historyClientName').innerText || 'cliente';
+            const table = document.getElementById('historyTableBody').cloneNode(true);
+            // Construir elemento temporal
+            const wrap = document.createElement('div');
+            wrap.style.padding = '20px';
+            wrap.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+            wrap.style.color = '#334155';
+            const title = document.createElement('h2');
+            title.innerText = `Historial de pagos - ${clientName}`;
+            title.style.marginBottom = '10px';
+            wrap.appendChild(title);
+            const tbl = document.createElement('table');
+            tbl.style.width = '100%';
+            tbl.style.borderCollapse = 'collapse';
+            tbl.innerHTML = `
+                <thead>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <th style="padding:8px;text-align:left">Fecha</th>
+                        <th style="padding:8px;text-align:right">Abono Total</th>
+                        <th style="padding:8px;text-align:right">A Capital</th>
+                        <th style="padding:8px;text-align:right">Interés</th>
+                        <th style="padding:8px;text-align:right">Saldo Rest.</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tbodyNew = tbl.querySelector('tbody');
+            // copiar filas
+            Array.from(table.querySelectorAll('tr')).forEach(r => tbodyNew.appendChild(r.cloneNode(true)));
+            wrap.appendChild(tbl);
+            document.getElementById('invoice-container').appendChild(wrap);
+            const opt = { margin: 0.4, filename: `Historial_${clientName}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+            html2pdf().set(opt).from(wrap).save().then(()=> wrap.remove()).catch(()=> wrap.remove());
+        }
+
         function closeHistoryModal() { document.getElementById('historyModal').classList.add('hidden'); }
-
-        function deleteClient(cip) {
-            const hasLoans = state.loans.some(l => l.cip === cip);
-            if(hasLoans) return alert("No se puede eliminar un cliente con préstamos activos.");
-            if(confirm("¿Eliminar cliente?")) {
-                state.clientsDatabase = state.clientsDatabase.filter(c => c.cip !== cip);
-                saveState();
-            }
-        }
-
-        function openEditClientModal(cip) {
-            const c = state.clientsDatabase.find(x => x.cip === cip);
-            if(!c) return;
-            document.getElementById('e_old_cip').value = c.cip;
-            document.getElementById('e_name').value = c.name;
-            document.getElementById('e_cip').value = c.cip;
-            document.getElementById('e_phone').value = c.phone || "";
-            document.getElementById('editClientModal').classList.remove('hidden');
-        }
-        function closeEditClientModal() { document.getElementById('editClientModal').classList.add('hidden'); }
-        function updateClient() {
-            const oldCip = document.getElementById('e_old_cip').value;
-            const client = state.clientsDatabase.find(c => c.cip === oldCip);
-            if(client) {
-                client.name = document.getElementById('e_name').value;
-                client.cip = document.getElementById('e_cip').value;
-                client.phone = document.getElementById('e_phone').value;
-                state.loans.forEach(l => { if(l.cip === oldCip) { l.cip = client.cip; l.name = client.name; } });
-                saveState(); closeEditClientModal();
-            }
-        }
-
-        // --- LÓGICA COBROS Y PDF (ACTUALIZADA CON FACTURA PROFESIONAL) ---
-        async function makeAbono(id) {
-            const loan = state.loans.find(l => l.id === id);
-            const abono = parseFloat(prompt(`Deuda: $${loan.totalDebt.toFixed(2)}. Ingrese pago:`));
-            if(isNaN(abono) || abono <= 0 || abono > (loan.totalDebt + 0.01)) return;
-            const pInt = Math.min(abono, loan.totalDebt - loan.currentPrincipal);
-            const pPri = Math.max(0, abono - pInt);
-            const remaining = Math.max(0, loan.totalDebt - abono);
-
-            state.paymentHistory.push({
-                date: new Date().toLocaleString(),
-                cip: loan.cip,
-                total: abono,
-                pInt: pInt,
-                pPri: pPri,
-                remaining: remaining
-            });
-
-            // CONFIRMACIÓN DE DESCARGA
-            if(confirm("Pago registrado con éxito. ¿Desea descargar el recibo en PDF?")) {
-                await generateInvoice(loan, abono, pInt, pPri);
-            }
-
-            state.earnings += pInt;
-            loan.currentPrincipal -= pPri;
-            if (loan.currentPrincipal < 0.1) state.loans = state.loans.filter(l => l.id !== id);
-            else loan.totalDebt = loan.currentPrincipal + (loan.currentPrincipal * (loan.interestRate/100));
-            saveState();
-        }
-
-        async function generateInvoice(loan, total, pInt, pPri) {
-            document.getElementById('inv_num').innerText = Math.floor(Math.random()*90000)+10000;
-            document.getElementById('inv_date').innerText = new Date().toLocaleString();
-            document.getElementById('inv_client_name').innerText = loan.name;
-            document.getElementById('inv_client_cip').innerText = loan.cip;
-            document.getElementById('inv_p_pri').innerText = pPri.toFixed(2);
-            document.getElementById('inv_p_int').innerText = pInt.toFixed(2);
-            document.getElementById('inv_total').innerText = total.toFixed(2);
-            document.getElementById('inv_remaining').innerText = Math.max(0, loan.totalDebt - total).toFixed(2);
-            
-            const opt = { 
-                margin: 0, 
-                filename: `Recibo_${loan.name}.pdf`, 
-                html2canvas: { scale: 2 }, 
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } 
-            };
-            await html2pdf().set(opt).from(document.getElementById('invoice-template')).save();
-        }
-
-        function renderDashboard() {
-            const tbody = document.getElementById('loanTableBody'); tbody.innerHTML = '';
-            let lentTotal = 0;
-            state.loans.forEach(l => {
-                lentTotal += l.currentPrincipal;
-                tbody.innerHTML += `<tr><td class="p-4"><b>${l.name}</b><br><span class="text-[10px] text-slate-400">${l.cip}</span></td><td class="p-4">$${l.currentPrincipal.toFixed(2)}</td><td class="p-4 text-center">${l.interestRate}%</td><td class="p-4 text-right text-emerald-600 font-bold">$${(l.totalDebt - l.currentPrincipal).toFixed(2)}</td><td class="p-4 text-center"><button onclick="makeAbono(${l.id})" class="bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"><i class="fas fa-file-invoice-dollar"></i> Cobrar</button></td></tr>`;
-            });
-            const totalAportado = state.investors.reduce((acc, inv) => acc + inv.amount, 0);
-            document.getElementById('statAvailable').innerText = `$${(totalAportado - lentTotal).toFixed(2)}`;
-            document.getElementById('statLent').innerText = `$${lentTotal.toFixed(2)}`;
-            document.getElementById('statTotalEarned').innerText = `$${state.earnings.toFixed(2)}`;
-            document.getElementById('statActiveCount').innerText = state.loans.length;
-            document.getElementById('sidebarTotal').innerText = `$${(totalAportado + state.earnings).toFixed(2)}`;
-        }
-        function resetApp() { if(confirm("¿Borrar todo?")) { localStorage.clear(); location.reload(); } }
-        function resetEarnings() { if(confirm("¿Resetear ganancias?")) { state.earnings = 0; saveState(); } }
-
-        renderDashboard(); renderClients(); renderInvestors();
+        function resetEarnings() { if(confirm("¿Reiniciar intereses?")) { state.earnings = 0; saveState(); } }
+        function resetApp() { if(confirm("¿Reiniciar sistema completo?")) { localStorage.clear(); location.reload(); } }
+        
+        // Iniciar
+        saveState();
     </script>
 </body>
 </html>
