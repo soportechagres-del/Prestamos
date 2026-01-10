@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PuntoCrédito Pro v5 - Gestión Total</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .animate-fade { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .nav-btn-active { background-color: #059669 !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2); }
+
+        /* ESTILOS DEL NUEVO LOGO */
+        .logo-container { display: flex; align-items: center; }
+        .logo-text { margin-left: 12px; line-height: 1.2; }
+        .logo-title { font-size: 20px; font-weight: bold; color: #ffffff; }
+        .logo-title span { color: #10b981; }
+        .logo-slogan { font-size: 10px; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* LOGIN OVERLAY */
+        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div id="login-overlay">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center">
+            <div class="flex justify-center mb-4">
+                <svg width="60" height="60" viewBox="0 0 100 100">
+                    <path d="M50 5 C30 5 15 20 15 40 C15 65 50 95 50 95 C50 95 85 65 85 40 C85 20 70 5 50 5Z" fill="#16a34a"/>
+                    <text x="50" y="55" text-anchor="middle" font-size="30" font-weight="bold" fill="white">$</text>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-6">Iniciar Sesión</h2>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Usuario</label>
+                    <input type="text" id="user_login" class="w-full bg-slate-50 p-3 rounded-xl border outline-none" placeholder="admin">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Contraseña</label>
+                    <input type="password" id="pass_login" class="w-full bg-slate-50 p-3 rounded-xl border outline-none" placeholder="****">
+                </div>
+                <button onclick="checkLogin()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col fixed h-full z-40">
+            <div class="p-6 border-b border-slate-800">
+                <div class="logo-container">
+                    <svg width="40" height="40" viewBox="0 0 100 100">
+                        <path d="M50 5 C30 5 15 20 15 40 C15 65 50 95 50 95 C50 95 85 65 85 40 C85 20 70 5 50 5Z" fill="#16a34a"/>
+                        <circle cx="50" cy="40" r="22" fill="#dcfce7"/>
+                        <text x="50" y="47" text-anchor="middle" font-size="26" font-weight="bold" fill="#15803d">$</text>
+                        <path d="M35 55 L55 35 L55 42 L68 42 L68 30 L85 45 L68 60 L68 48 L55 48 L55 55 Z" fill="#f59e0b"/>
+                    </svg>
+                    <div class="logo-text">
+                        <div class="logo-title">Punto <span>Crédito</span></div>
+                        <div class="logo-slogan">Solvencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mx-4 mt-6 p-4 bg-slate-800/50 border border-slate-700 rounded-2xl">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Balance Total del Sistema</p>
+                <p id="sidebarTotal" class="text-xl font-bold text-emerald-400 leading-none mt-1">$0.00</p>
+                <p class="text-[9px] text-slate-500 mt-2 font-medium">(Capital + Ganancias)</p>
+            </div>
+            
+            <nav class="flex-grow p-4 space-y-2 mt-4" id="mainNav">
+                <button data-section="dashboard" onclick="showSection('dashboard', this)" class="nav-btn nav-btn-active w-full flex items-center p-3 rounded-xl transition-all"><i class="fas fa-home mr-3"></i> Dashboard</button>
+                <button data-section="clients" onclick="showSection('clients', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-users mr-3"></i> Base de Clientes</button>
+                <button data-section="investors" onclick="showSection('investors', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-hand-holding-heart mr-3"></i> Aportantes</button>
+                <button data-section="config" onclick="showSection('config', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 transition-all hover:bg-slate-800 hover:text-emerald-400"><i class="fas fa-cog mr-3"></i> Configuración</button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full text-slate-500 text-xs hover:text-white transition-colors">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <main class="flex-grow ml-64 p-10">
+            <section id="section-dashboard" class="content-section animate-fade">
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-3xl font-extrabold text-slate-800">Panel Financiero</h1><p class="text-slate-500 text-sm">Resumen de capital y rentabilidad.</p></div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">+ Nuevo Préstamo</button>
+                            <button id="profileBtn" onclick="openProfile()" class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold text-sm">Mi Cuenta</button>
+                        </div>
+                </header>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Capital Disponible</p><p id="statAvailable" class="text-xl font-bold text-slate-800">$0.00</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Capital Prestado</p><p id="statLent" class="text-xl font-bold text-orange-600">$0.00</p></div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative">
+                        <div class="flex justify-between items-center mb-1"><p class="text-slate-400 text-[10px] font-bold uppercase">Intereses Cobrados</p><button onclick="resetEarnings()" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-undo-alt text-[10px]"></i></button></div>
+                        <p id="statTotalEarned" class="text-xl font-bold text-emerald-600">$0.00</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100"><p class="text-slate-400 text-[10px] font-bold uppercase mb-1">Préstamos Activos</p><p id="statActiveCount" class="text-xl font-bold text-indigo-600">0</p></div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr><th class="p-4 text-xs font-bold text-slate-400 uppercase">Cliente / CIP</th><th class="p-4 text-xs font-bold text-slate-400 uppercase">Capital Pendiente</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-center">Interés %</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-right">Interés Ganancia</th><th class="p-4 text-xs font-bold text-slate-400 uppercase text-center">Acciones</th></tr>
+                        </thead>
+                        <tbody id="loanTableBody" class="divide-y divide-slate-50 text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="section-clients" class="content-section hidden animate-fade">
+                <header class="mb-10"><h1 class="text-3xl font-extrabold text-slate-800">Base de Clientes</h1></header>
+                <div id="clientsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <section id="section-investors" class="content-section hidden animate-fade">
+                <header class="flex justify-between items-center mb-10">
+                    <div><h1 class="text-3xl font-extrabold text-slate-800">Aportantes</h1><p class="text-slate-500 text-sm">Distribución proporcional.</p></div>
+                    <button onclick="openInvestorModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all">+ Registrar Aportante</button>
+                </header>
+                <div id="investorsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <section id="section-config" class="content-section hidden animate-fade">
+                <h1 class="text-2xl font-bold mb-6 text-slate-800">Configuración</h1>
+                
+                <div class="bg-white p-8 rounded-3xl shadow-sm mb-6 border border-slate-100 max-w-lg">
+                    <h2 class="text-sm font-bold text-indigo-600 uppercase mb-4">Gestión de Usuarios</h2>
+                    <div class="space-y-3">
+                        <div id="user_list_admin" class="divide-y divide-slate-100"></div>
+                        <div class="pt-4 space-y-2">
+                            <input type="text" id="nu_name" placeholder="Nuevo Usuario" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                            <input type="password" id="nu_pass" placeholder="Nueva Contraseña" class="w-full bg-slate-50 p-3 rounded-xl border text-sm">
+                            <div class="mt-2">
+                                <label class="text-[11px] font-medium text-slate-600">Rol</label>
+                                <select id="nu_role" class="w-full bg-slate-50 p-2 rounded-xl border text-sm mt-1">
+                                    <option value="user">Usuario</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm mt-2">
+                                <label class="flex items-center"><input id="nu_perm_dashboard" type="checkbox" class="mr-2">Dashboard</label>
+                                <label class="flex items-center"><input id="nu_perm_clients" type="checkbox" class="mr-2">Clientes</label>
+                                <label class="flex items-center"><input id="nu_perm_investors" type="checkbox" class="mr-2">Aportantes</label>
+                                <label class="flex items-center"><input id="nu_perm_config" type="checkbox" class="mr-2">Configuración</label>
+                            </div>
+                            <button onclick="createUser()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm">Crear Usuario</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-3xl shadow-sm max-w-lg border border-slate-100">
+                    <button onclick="resetApp()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all">Reiniciar Sistema</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="profileModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-2xl w-[360px] shadow-2xl">
+            <h2 class="text-xl font-bold mb-4">Mi Cuenta</h2>
+            <div class="text-sm space-y-2">
+                <div><b>Usuario:</b> <span id="profile_user" class="font-medium"></span></div>
+                <div><b>Rol:</b> <span id="profile_role" class="font-medium"></span></div>
+                <div><b>Contraseña:</b> <span id="profile_pass" class="font-medium"></span></div>
+                <div><b>Permisos:</b> <span id="profile_allowed" class="font-medium"></span></div>
+            </div>
+            <div class="mt-6"><button onclick="closeProfile()" class="w-full py-2 bg-slate-100 rounded-xl font-bold">Cerrar</button></div>
+        </div>
+    </div>
+
+    <div id="investorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Nuevo Aportante</h2>
+            <div class="space-y-4">
+                <input type="text" id="i_name" placeholder="Nombre" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <input type="number" id="i_amount" placeholder="Monto inicial $" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <button onclick="saveInvestor()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Registrar</button>
+                <button onclick="closeInvestorModal()" class="w-full text-slate-400 font-bold text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editInvestorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[400px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Modificar Aportante</h2>
+            <div class="space-y-4">
+                <input type="hidden" id="ei_id">
+                <label class="text-xs font-bold text-slate-400 uppercase">Nombre</label>
+                <input type="text" id="ei_name" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <label class="text-xs font-bold text-slate-400 uppercase">Capital Base ($)</label>
+                <input type="number" id="ei_amount" class="w-full bg-slate-50 p-3 rounded-xl border outline-none">
+                <button onclick="updateInvestor()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Guardar Cambios</button>
+                <button onclick="closeEditInvestorModal()" class="w-full text-slate-400 font-bold text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-3xl w-[420px] shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">Nuevo Préstamo</h2>
+            <div class="space-y-4">
+                <select id="m_select_client" onchange="fillClientData()" class="w-full bg-slate-50 p-3 rounded-xl border text-sm font-medium"><option value="">-- Nuevo Cliente --</option></select>
+                <input type="text" id="m_name" placeholder="Nombre" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <input type="text" id="m_cip" placeholder="CIP" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <input type="text" id="m_phone" placeholder="WhatsApp" class="w-full bg-slate-50 p-3 rounded-xl border">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="number" id="m_amount" placeholder="Monto $" class="w-full bg-slate-50 p-3 rounded-XL border">
